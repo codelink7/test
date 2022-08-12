@@ -4,6 +4,9 @@
 
 int main(void)
 {
+
+
+    /*
     char string[20];
     int i, len, flag = 0;
     printf("Enter to check palindrome:\n");              // allow user to enter string
@@ -24,6 +27,6 @@ int main(void)
         else {
             printf("Input is a palindrome\n");
         }
-
+    */
     return 0;
 }
