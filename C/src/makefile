@@ -8,7 +8,7 @@ all :
 	$(compiler) main.c -o $(build)/$(TARGET) 
 
 test:
-	./$(build)/main
+	./$(build)/$(TARGET)
 
 clean : 
 
