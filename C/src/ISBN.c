@@ -5,8 +5,8 @@
 int main()
 {
     
-char input[14];
-char isbn[11];
+char input[15];
+char isbn[15];
 
 int i = 0;
 int sum = 0;
@@ -17,10 +17,10 @@ printf("Enter the input number: ");
 scanf("%s", &input);
 
     for(int i = 0, j; input[i] != '\0'; i++) {
-        while(!isdigit(input[i]) && !(input[i] == '\0')) {
+        while((input[i] == '-') && !(input[i] == '\0')) {
             for (j = i; input[j] != '\0'; ++j) {
 
-            // if jth element of line is not a number,
+            // if jth element of line is Hyphen,
             // assign the value of (j+1)th element to the jth element
             input[j] = input[j + 1];
          }
@@ -28,7 +28,7 @@ scanf("%s", &input);
     }
     
 
-    for(i = 0; i<10; i++)
+    for(i = 0; i<14; i++)
     {
         isbn[i] = input[i];
     }
@@ -37,7 +37,7 @@ scanf("%s", &input);
    
     // Check if the input is valid
     if (strlen(isbn) != 10) {
-        printf("Invalid ISBN number.\n");
+        printf("%s Invalid ISBN number.\n",isbn);
         return 0;
     }
 
@@ -50,15 +50,15 @@ scanf("%s", &input);
     check = sum % 11;
     if (check == 10) {
         if (isbn[9] == 'X') {
-            printf("Valid ISBN number.\n");
+            printf("%s Valid ISBN number.\n",isbn);
         } else {
-            printf("Invalid ISBN number.\n");
+            printf("%s Invalid ISBN number.\n",isbn);
         }
     } else {
         if (isbn[9] == (check + '0')) {
-            printf("Valid ISBN number.\n");
+            printf("%s Valid ISBN number.\n",isbn);
         } else {
-            printf("Invalid ISBN number.\n");
+            printf("%s Invalid ISBN number.\n",isbn);
         }
     }
 

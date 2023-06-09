@@ -3,92 +3,119 @@
 #include <string.h>
 #include <math.h>
 
-#define MAX_BEACONS 30
-#define MAX_NAME_LENGTH 20
+#define PI 3.14159265358979323846
+#define EPSILON 1E-7
 
-typedef struct {
-    char name[MAX_NAME_LENGTH+1];
+typedef struct Point
+{
     double x, y;
-} Beacon;
+} Point;
 
-typedef struct {
-    double speed, dir;
+typedef struct Line
+{
+    double a, b, c;
+} Line;
+
+typedef struct Boat
+{
+    double course, speed;
 } Boat;
 
-int num_beacons;
-Beacon beacons[MAX_BEACONS];
-
-int read_beacons()
+typedef struct Reading
 {
-    if (scanf("%d", &num_beacons) != 1) return 0;
-    for (int i = 0; i < num_beacons; i++) {
-        if (scanf("%s %lf %lf", beacons[i].name, &beacons[i].x, &beacons[i].y) != 3)
-            return 0;
+    char name[20];
+    double time, angle;
+} Reading;
+
+Point beacons[100];
+Reading reading1, reading2;
+Boat mine;
+
+double getAngle(double angle)
+{
+    if (angle <= 90.0 + EPSILON)
+        return (90.0 - angle);
+    else if (angle <= 270.0 + EPSILON)
+        return -(angle - 90.0);
+    else
+        return 180.0 - (angle - 270.0);
+}
+
+Line getLine(Reading data)
+{
+    Line lr;
+    double angle = getAngle(mine.course + data.angle);
+
+    if (fabs(fabs(angle) - 90.0) <= EPSILON)
+    {
+        lr.a = 1.0;
+        lr.b = 0.0;
+        lr.c = -beacons[atoi(data.name+1)-1].x;
     }
-    return 1;
-}
-
-int get_beacon_index(char *name)
-{
-    for (int i = 0; i < num_beacons; i++) {
-        if (strcmp(name, beacons[i].name) == 0)
-            return i;
+    else
+    {
+        lr.a = -tan(angle * PI / 180.0);
+        lr.b = 1.0;
+        lr.c = -(lr.a * beacons[atoi(data.name+1)-1].x + lr.b * beacons[atoi(data.name+1)-1].y);
     }
-    return -1;
+
+    return lr;
 }
 
-void get_beacon_position(int index, double angle, Boat boat, double *dx, double *dy)
+void calculate()
 {
-    double heading = boat.dir + angle;
-    if (heading >= 360) heading -= 360;
-    *dx = beacons[index].x - boat.speed * sin(heading * M_PI / 180.0);
-    *dy = beacons[index].y - boat.speed * cos(heading * M_PI / 180.0);
-}
+    double traveled = (reading2.time - reading1.time) * mine.speed;
+    Line line1 = getLine(reading1), line2 = getLine(reading2);
+    double boatAngle = mine.course * PI / 180.0;
+    double x1 = line1.c * line2.b - line1.b * line2.c -
+        line1.b * line2.b * traveled * cos(boatAngle) -
+        line1.b * line2.a * traveled * sin(boatAngle);
+    x1 = x1 / (line1.b * line2.a - line1.a * line2.b);
+    double y1 = line1.c * line2.a - line1.a * line2.c -
+        line1.a * line2.a * traveled * sin(boatAngle) -
+        line1.a * line2.b * traveled * cos(boatAngle);
+    y1 = y1 / (line1.a * line2.b - line1.b * line2.a);
 
-void calculate_position(double x1, double y1, double x2, double y2, double time, Boat boat, double *x, double *y)
-{
-    double dx = x2 - x1;
-    double dy = y2 - y1;
-    double dist = sqrt(dx*dx + dy*dy);
-    double dir = atan2(dx, dy) * 180.0 / M_PI;
-    double heading = boat.dir + dir;
-    if (heading >= 360) heading -= 360;
-    *x = x2 + boat.speed * time * sin(heading * M_PI / 180.0);
-    *y = y2 + boat.speed * time * cos(heading * M_PI / 180.0);
+    printf(": Position is (%.2lf, %.2lf)\n", (x1 + traveled * sin(boatAngle)), (y1 + traveled * cos(boatAngle)));
 }
 
 int main()
 {
-    int scenario = 1;
-    while (read_beacons()) {
-        int num_scenarios;
-        if (scanf("%d", &num_scenarios) != 1) break;
-        for (int i = 0; i < num_scenarios; i++) {
-            double speed, dir;
-            if (scanf("%lf %lf", &speed, &dir) != 2) break;
-            Boat boat = { speed, dir };
-            int index1;
-            double angle1;
-            if (scanf("%lf %s %lf", &angle1, beacons[0].name, &angle1) != 3) break;
-            index1 = get_beacon_index(beacons[0].name);
-            if (index1 < 0) break;
-            double x1, y1;
-            get_beacon_position(index1, angle1, boat, &x1, &y1);
-            int index2;
-            double angle2;
-            if (scanf("%lf %s %lf", &angle2, beacons[0].name, &angle2) != 3) break;
-            index2 = get_beacon_index(beacons[0].name);
-            if (index2 < 0) break;
-            double x2, y2;
-            get_beacon_position(index2, angle2, boat, &x2, &y2);
-            double time = angle2 - angle1;
+    int counter, cases = 0;
+
+    while (scanf("%d", &counter) == 1)
+    {
+        memset(beacons, 0, sizeof(beacons));
+
+        for (int i = 1; i <= counter; i++)
+        {
+            char name[20];
             double x, y;
-            calculate_position(x1, y1, x2, y2, time, boat, &x, &y);
-            if (x < 0 || x > 100 || y < 0 || y > 100)
-                printf("Scenario %d: Position cannot be determined.\n", scenario++);
-            else
-                printf("Scenario %d: Position is (%.2f, %.2f).\n", scenario++, x, y);
+            scanf("%s %lf %lf", name, &x, &y);
+            Point location = { x, y };
+            beacons[atoi(name+1)-1] = location;
+        }
+
+        scanf("%d", &counter);
+
+        for (int i = 1; i <= counter; i++)
+        {
+            scanf("%lf %lf", &mine.course, &mine.speed);
+            scanf("%lf %s %lf", &reading1.time, reading1.name, &reading1.angle);
+            scanf("%lf %s %lf", &reading2.time, reading2.name, &reading2.angle);
+
+            printf("Scenario %d", ++cases);
+
+            if (fabs(reading1.angle - reading2.angle) <= EPSILON ||
+                fabs(fabs(reading1.angle - reading2.angle) - 180.0) <= EPSILON)
+            {
+                printf(": Position cannot be determined\n");
+                continue;
+            }
+
+            calculate();
         }
     }
+
     return 0;
 }
